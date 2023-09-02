@@ -1,6 +1,6 @@
-## ChemDrawを150%で貼り付け
 ```
-Sub PasteChemDraw()
+'ChemDrawを150% で貼り付け
+Sub PasteChemDraw150()
     ActiveWindow.Selection.SlideRange.Shapes.Paste
     With ActiveWindow.Selection.SlideRange.Shapes(ActiveWindow.Selection.SlideRange.Shapes.Count)
         Select Case .Type
@@ -10,4 +10,5 @@ Sub PasteChemDraw()
         End Select
     End With
 End Sub
+
 ```
