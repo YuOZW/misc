@@ -1,0 +1,39 @@
+molecule {
+-1 1
+ C                  3.17615677    0.90747330    0.00000000
+ H                  3.53281120   -0.10133671    0.00000000
+ H                  3.53282961    1.41187149    0.87365150
+ H                  2.10615677    0.90748648    0.00000000
+ Cl                 3.76283359    1.73713761   -1.43703425
+ Cl                 2.24354164   -0.22279459    2.18890366
+units angstrom
+no_reorient
+no_com
+symmetry c1
+}
+
+set_num_threads(4)
+set_memory('8GB')
+
+set{
+BASIS Def2-SVP
+GUESS SAP
+REFERENCE RHF
+SCF_TYPE DF
+E_CONVERGENCE 6
+D_CONVERGENCE 8
+DFT_RADIAL_POINTS 99
+DFT_SPHERICAL_POINTS 590
+DFT_PRUNING_SCHEME ROBUST
+}
+
+gradient('wB97X-D')
+
+afir{
+METHOD RADIAL
+ADD   1 6  50.0
+BREAK 1 5  50.0
+PRE_OPT OFF
+PATH_OPT ON
+TS_OPT OFF
+}
