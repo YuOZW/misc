@@ -1,0 +1,21 @@
+[basic]
+algo = RS
+calc_code = ASE
+tot_struc = 4
+nstage = 1
+njob = 2
+jobcmd = sh
+jobfile = job_cryspy
+
+[structure]
+struc_mode = mol
+natot = 90
+atype = B C N H O F
+nat = 2 38 6 36 4 4
+mol_file = ./init.xyz
+nmol = 2
+
+[ASE]
+ase_python = ase_in.py
+
+[option]
