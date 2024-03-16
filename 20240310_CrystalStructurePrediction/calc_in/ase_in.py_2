@@ -7,7 +7,7 @@ from ase.units import Bohr, Hartree
 from ase.io import write
 
 class xtb_gfnff_pbc(FileIOCalculator):
-   implemented_properties = ['energy', 'forces', 'stress']
+   implemented_properties = ['energy']
    discard_results_on_any_change = True
 
    def __init__(self,
@@ -19,7 +19,7 @@ class xtb_gfnff_pbc(FileIOCalculator):
       profile=None,
       **kwargs):
 
-      command = 'xtb xtb.coord --gfnff --norestart --grad > xtb.out'
+      command = 'xtb xtb.coord --gfn 1 --norestart > xtb.out'
 
       super().__init__(
          restart,
@@ -53,32 +53,19 @@ class xtb_gfnff_pbc(FileIOCalculator):
       #      fout.write(f'{lab} {pos[0]} {pos[1]} {pos[2]}\n')
 
    def read_results(self):
-      with open('gradient', 'r') as fin:
-         fin.readline()
-         line = fin.readline()
-         _energy = line.split()[6]
+      found_energy = False
+      with open('xtb.out', 'r') as fin:
+         for line in fin:
+            if 'TOTAL ENERGY' in line:
+               try:
+                  self.results['energy'] = float(line.split()[3])
+                  found_energy = True
+                  break
+               except:
+                  break
 
-         for _ in range(len(self.atoms)):
-            fin.readline()
-
-         _forces = []
-         for _ in range(len(self.atoms)):
-            _forces.append(fin.readline().split())
-      
-      self.results['energy'] = float(_energy)
-      self.results['forces'] = -np.array(_forces, dtype=float) * Hartree / Bohr
-
-      with open('gradlatt', 'r') as fin:
-         for _ in range(5):
-            fin.readline()
-         _stress = []
-         for _ in range(3):
-            _stress.append(fin.readline().split())
-
-      _stress = np.array(_stress, dtype=float)
-      _stress *= Hartree / Bohr / self.atoms.cell.volume
-      _stress = _stress.T @ self.atoms.cell
-      self.results['stress'] = _stress.flat[[0, 4, 8, 5, 2, 1]]
+      if found_energy == False:
+         self.results['energy'] = 0.0
 
 from ase.constraints import ExpCellFilter, StrainFilter
 from ase.optimize import BFGS
@@ -87,15 +74,9 @@ from ase.io import read, write
 
 atoms = read('POSCAR', format='vasp')
 atoms.calc = xtb_gfnff_pbc()
-atoms.set_constraint([FixSymmetry(atoms)])
-atoms = ExpCellFilter(atoms, hydrostatic_strain=False)
-opt = BFGS(atoms)
-opt.run(fmax=0.05)
 
-e = atoms.atoms.get_total_energy()
+e = atoms.get_total_energy()
 with open('log.tote', mode='w') as f:
     f.write(str(e))
 
-write('CONTCAR', atoms.atoms, format='vasp')
-
-os.remove('gfnff_topo')
+write('CONTCAR', atoms, format='vasp')
