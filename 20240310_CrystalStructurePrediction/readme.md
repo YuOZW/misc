@@ -7,5 +7,5 @@
 6. ```conda install spglib```
 7. ```pip install csp-cryspy```
 ## 実行
-- ```cryspy```を逐次実行
-- ```watch -n 10 cryspy```
+- ```python my_cryspy.py```を逐次実行
+- ```watch -n 10 python my_cryspy.py```
