@@ -6,6 +6,8 @@
 5. ```conda install conda-forge::ase```
 6. ```conda install spglib```
 7. ```pip install csp-cryspy```
+8. ```conda install conda-forge::mamba```
+9. ```mamba install 'dftbplus=*=nompi_*'```
 ## 実行
 - ```python my_cryspy.py```を逐次実行
 - ```watch -n 10 python my_cryspy.py```
