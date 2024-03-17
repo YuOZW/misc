@@ -1,9 +1,9 @@
 [basic]
 algo = RS
 calc_code = ASE
-tot_struc = 4
+tot_struc = 10
 nstage = 2
-njob = 2
+njob = 4
 jobcmd = sh
 jobfile = job_cryspy
 

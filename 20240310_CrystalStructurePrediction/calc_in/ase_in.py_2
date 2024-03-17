@@ -1,3 +1,4 @@
+
 import numpy as np
 import subprocess
 import sys
@@ -6,20 +7,20 @@ from ase.calculators.calculator import FileIOCalculator
 from ase.units import Bohr, Hartree
 from ase.io import write
 
-class xtb_gfnff_pbc(FileIOCalculator):
+class xtb_dftb_pbc(FileIOCalculator):
    implemented_properties = ['energy']
    discard_results_on_any_change = True
 
    def __init__(self,
       restart=None,
       ignore_bad_restart_file=FileIOCalculator._deprecated,
-      label='xtb',
+      label='dftb',
       atoms=None,
       command=None,
       profile=None,
       **kwargs):
 
-      command = 'xtb xtb.coord --gfn 1 --norestart > xtb.out'
+      command = 'dftb+ > dftb.out'
 
       super().__init__(
          restart,
@@ -33,23 +34,30 @@ class xtb_gfnff_pbc(FileIOCalculator):
    def write_input(self, atoms, properties=None, system_changes=None):
       FileIOCalculator.write_input(self, atoms, properties, system_changes)
 
-      with open('xtb.coord', 'w') as fout:
-         fout.write('$coord\n')
-         for pos, lab in zip(atoms.get_positions(), atoms.get_chemical_symbols()):
-            fout.write(f'{pos[0]/Bohr} {pos[1]/Bohr} {pos[2]/Bohr} {lab}\n')
-         fout.write('$periodic 3\n')
-         fout.write('$lattice bohr\n')
-         for xyz in atoms.get_cell():
-            fout.write(f'{xyz[0]/Bohr} {xyz[1]/Bohr} {xyz[2]/Bohr}\n')
-         fout.write('$end\n')
+      write('geo_end.gen', atoms)
+
+      with open('dftb_in.hsd', 'w') as fout:
+         fout.write('Geometry = GenFormat {\n')
+         fout.write('    <<< "geo_end.gen"\n')
+         fout.write('}\n')
+         fout.write('\n')
+         fout.write('Hamiltonian = xTB {\n')
+         fout.write('    Method = "GFN2-xTB"\n')
+         fout.write('    KPointsAndWeights = SupercellFolding {\n')
+         fout.write('        1 0 0\n')
+         fout.write('        0 1 0\n')
+         fout.write('        0 0 1\n')
+         fout.write('        0.0 0.0 0.0\n')
+         fout.write('    }\n')
+         fout.write('}\n')
 
    def read_results(self):
       found_energy = False
-      with open('xtb.out', 'r') as fin:
+      with open('dftb.out', 'r') as fin:
          for line in fin:
-            if 'TOTAL ENERGY' in line:
+            if 'Total Energy:' in line:
                try:
-                  self.results['energy'] = float(line.split()[3])
+                  self.results['energy'] = float(line.split()[2])
                   found_energy = True
                   break
                except:
@@ -58,16 +66,14 @@ class xtb_gfnff_pbc(FileIOCalculator):
       if found_energy == False:
          self.results['energy'] = 0.0
 
-from ase.constraints import ExpCellFilter, StrainFilter
-from ase.optimize import BFGS
-from ase.spacegroup.symmetrize import FixSymmetry
+
 from ase.io import read, write
 import shutil
 
 if __name__ == '__main__':
    try:
       atoms = read('POSCAR', format='vasp')
-      atoms.calc = xtb_gfnff_pbc()
+      atoms.calc = xtb_dftb_pbc()
 
       e = atoms.get_total_energy()
       with open('log.tote', mode='w') as f:
