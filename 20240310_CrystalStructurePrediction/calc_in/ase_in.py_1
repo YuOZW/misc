@@ -30,9 +30,6 @@ class xtb_gfnff_pbc(FileIOCalculator):
          profile=profile,
          **kwargs)
 
-      #with open('hist.xyz', 'w') as fout:
-      #   pass
-
    def write_input(self, atoms, properties=None, system_changes=None):
       FileIOCalculator.write_input(self, atoms, properties, system_changes)
 
@@ -45,12 +42,6 @@ class xtb_gfnff_pbc(FileIOCalculator):
          for xyz in atoms.get_cell():
             fout.write(f'{xyz[0]/Bohr} {xyz[1]/Bohr} {xyz[2]/Bohr}\n')
          fout.write('$end\n')
-
-      #with open('hist.xyz', 'a') as fout:
-      #   fout.write(f'{len(atoms)}\n')
-      #   fout.write('\n')
-      #   for pos, lab in zip(atoms.get_positions(), atoms.get_chemical_symbols()):
-      #      fout.write(f'{lab} {pos[0]} {pos[1]} {pos[2]}\n')
 
    def read_results(self):
       with open('gradient', 'r') as fin:
@@ -84,18 +75,32 @@ from ase.constraints import ExpCellFilter, StrainFilter
 from ase.optimize import BFGS
 from ase.spacegroup.symmetrize import FixSymmetry
 from ase.io import read, write
+import shutil
 
-atoms = read('POSCAR', format='vasp')
-atoms.calc = xtb_gfnff_pbc()
-atoms.set_constraint([FixSymmetry(atoms)])
-atoms = ExpCellFilter(atoms, hydrostatic_strain=False)
-opt = BFGS(atoms)
-opt.run(fmax=0.05)
+if __name__ == '__main__':
+   try:
+      atoms = read('POSCAR', format='vasp')
+      atoms.calc = xtb_gfnff_pbc()
+      atoms.set_constraint([FixSymmetry(atoms)])
+      atoms = ExpCellFilter(atoms, hydrostatic_strain=False)
+      opt = BFGS(atoms)
+      opt.run(fmax=0.05, steps=1000)
 
-e = atoms.atoms.get_total_energy()
-with open('log.tote', mode='w') as f:
-    f.write(str(e))
+      e = atoms.atoms.get_total_energy()
+      with open('log.tote', mode='w') as f:
+          f.write(str(e))
 
-write('CONTCAR', atoms.atoms, format='vasp')
+      write('CONTCAR', atoms.atoms, format='vasp')
 
-os.remove('gfnff_topo')
+   except:
+      with open('log.tote', 'w') as f:
+         f.write('9999')
+          
+      if os.path.isfile('POSCAR'):
+         shutil.copyfile('POSCAR', 'CONTCAR')
+      else:
+         with open('CONTCAR', 'w') as f:
+             f.write('ERROR')
+
+   if os.path.isfile('gfnff_topo'):
+      os.remove('gfnff_topo')
